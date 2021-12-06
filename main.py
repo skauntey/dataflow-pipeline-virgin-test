@@ -57,11 +57,7 @@ def execute_pipe():
                 pipeline
                 | 'Read lines' >> beam.io.ReadFromText(inputs_pattern, skip_header_lines=1)
                 | 'Transformation Pipeline' >> FiltersComposite()
-                | 'Write results' >> beam.io.WriteToText(outputs_prefix,
-                                                         file_name_suffix = zip_format,
-                                                         append_trailing_newlines = True,
-                                                         compression_type = CompressionTypes.GZIP,
-                                                         header=header_transaction_output)
+                | 'Write results' >> beam.io.WriteToText(outputs_prefix)
                     )
         try:
             return csv_data
