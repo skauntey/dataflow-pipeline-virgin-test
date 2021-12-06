@@ -10,6 +10,7 @@ from apache_beam.io.filesystem import CompressionTypes
 from apache_beam.error import *
 from filter_composite.transformation_filters import *
 from utils.constants import *
+from apache_beam.error import BeamError, PipelineError, RunnerError
 
 
 # Transaction pipeline : connection and executing pipeline
@@ -22,7 +23,7 @@ def run(argv=None, save_main_session=True):
 
     parser.add_argument("--output",
                         dest='output',
-                        default="gs://data_files01/output/result",
+                        default="output/results",
                         help='Output file to write results to.' )
 
     path_args, beam_args = parser.parse_known_args()
@@ -32,8 +33,8 @@ def run(argv=None, save_main_session=True):
             [
                 "--project=beam-334214",
                 "--runner=DirectRunner",
-                "--temp_location=gs://data_temp01/tmp",
-                "--staging_location=gs://data_temp01/tmp",
+                "--temp_location=gs://cloud-samples-data/bigquery/sample-transactions/",
+                "--staging_location=gs://cloud-samples-data/bigquery/sample-transactions/",
                 "--region=europe-west2",
                 "--job_name=pipeline-filtering"
             ]
@@ -56,10 +57,18 @@ def execute_pipe():
                 pipeline
                 | 'Read lines' >> beam.io.ReadFromText(inputs_pattern, skip_header_lines=1)
                 | 'Transformation Pipeline' >> FiltersComposite()
-                | 'Write results' >> beam.io.WriteToText(outputs_prefix)
+                | 'Write results' >> beam.io.WriteToText(outputs_prefix,
+                                                         file_name_suffix = zip_format,
+                                                         append_trailing_newlines = True,
+                                                         compression_type = CompressionTypes.GZIP,
+                                                         header=header_transaction_output)
                     )
         try:
             return csv_data
+
+        except BeamError as beam_error:
+            logging.error ( f"Beam Error Message: {beam_error}" )
+            raise beam_error
 
         except PipelineError as pipe_error:
             logging.error ( f"Pipeline Error Message: {pipe_error}" )
@@ -69,8 +78,9 @@ def execute_pipe():
             logging.error ( f"RunnerError Message: {runner_error}" )
             raise runner_error
 
-        except Exception as e:
+        except Exception as exception:
             logging.error(f"Generic exception!")
+            raise exception
 
 
 
