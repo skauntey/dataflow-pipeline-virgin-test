@@ -1,4 +1,4 @@
-# transaction_filters_pipeline
+# transactions_filters_pipeline
 Apache Beam Pipeline for transaction report with filters
 
 ## create virtual environment
